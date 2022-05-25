@@ -741,21 +741,24 @@
 
 - (void) getDeferredApplink:(CDVInvokedUrlCommand *) command
 {
-    [FBSDKAppLinkUtility fetchDeferredAppLink:^(NSURL *url, NSError *error) {
-        if (error) {
-            // If the SDK has a message for the user, surface it.
-            NSString *errorMessage = error.userInfo[FBSDKErrorLocalizedDescriptionKey] ?: @"Received error while fetching deferred app link.";
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-                                                              messageAsString:errorMessage];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-            return;
-        }
-        if (url) {
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:url.absoluteString];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-        } else {
-            [self returnGenericSuccess:command.callbackId];
-        }
+    __weak FacebookConnectPlugin* sWeak = self;;
+    [self.commandDelegate runInBackground:^{
+        [FBSDKAppLinkUtility fetchDeferredAppLink:^(NSURL *url, NSError *error) {
+            if (error) {
+                // If the SDK has a message for the user, surface it.
+                NSString *errorMessage = error.userInfo[FBSDKErrorLocalizedDescriptionKey] ?: @"Received error while fetching deferred app link.";
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                                                  messageAsString:errorMessage];
+                [sWeak.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                return;
+            }
+            if (url) {
+                CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:url.absoluteString];
+                [sWeak.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+            } else {
+                [sWeak returnGenericSuccess:command.callbackId];
+            }
+        }];
     }];
 }
 
