@@ -17,7 +17,7 @@
 
 @property (strong, nonatomic) NSString* dialogCallbackId;
 @property (strong, nonatomic) FBSDKLoginManager *loginManager;
-@property (nonatomic, assign) FBSDKLoginTracking *loginTracking;
+@property (readwrite) FBSDKLoginTracking loginTracking;
 @property (strong, nonatomic) NSString* gameRequestDialogCallbackId;
 @property (nonatomic, assign) BOOL applicationWasActivated;
 
@@ -59,8 +59,8 @@
 }
 
 - (void) applicationDidBecomeActive:(NSNotification *) notification {
-    if (FBSDKSettings.isAutoLogAppEventsEnabled) {
-        [FBSDKAppEvents activateApp];
+    if (FBSDKSettings.sharedSettings.isAutoLogAppEventsEnabled) {
+        [FBSDKAppEvents.shared activateApp];
     }
     if (self.applicationWasActivated == NO) {
         self.applicationWasActivated = YES;
@@ -78,7 +78,7 @@
 #pragma mark - Cordova commands
 
 - (void)getApplicationId:(CDVInvokedUrlCommand *)command {
-    NSString *appID = FBSDKSettings.appID;
+    NSString *appID = FBSDKSettings.sharedSettings.appID;
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:appID];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -91,12 +91,12 @@
     }
     
     NSString *appId = [command argumentAtIndex:0];
-    [FBSDKSettings setAppID:appId];
+    [FBSDKSettings.sharedSettings setAppID:appId];
     [self returnGenericSuccess:command.callbackId];
 }
 
 - (void)getClientToken:(CDVInvokedUrlCommand *)command {
-    NSString *clientToken = FBSDKSettings.clientToken;
+    NSString *clientToken = FBSDKSettings.sharedSettings.clientToken;
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:clientToken];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -109,12 +109,12 @@
     }
     
     NSString *clientToken = [command argumentAtIndex:0];
-    [FBSDKSettings setClientToken:clientToken];
+    [FBSDKSettings.sharedSettings setClientToken:clientToken];
     [self returnGenericSuccess:command.callbackId];
 }
 
 - (void)getApplicationName:(CDVInvokedUrlCommand *)command {
-    NSString *displayName = FBSDKSettings.displayName;
+    NSString *displayName = FBSDKSettings.sharedSettings.displayName;
     CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:displayName];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
@@ -127,7 +127,7 @@
     }
     
     NSString *displayName = [command argumentAtIndex:0];
-    [FBSDKSettings setDisplayName:displayName];
+    [FBSDKSettings.sharedSettings setDisplayName:displayName];
     [self returnGenericSuccess:command.callbackId];
 }
 
@@ -139,10 +139,10 @@
     
     BOOL force = [[command argumentAtIndex:0] boolValue];
     if (force) {
-        [FBSDKAccessToken refreshCurrentAccessToken:^(FBSDKGraphRequestConnection *connection, id result, NSError *error) {
-            CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
-                                                          messageAsDictionary:[self loginResponseObject]];
-            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+        [FBSDKAccessToken refreshCurrentAccessTokenWithCompletion:^(id<FBSDKGraphRequestConnecting>  _Nullable connection, id  _Nullable result, NSError * _Nullable error) {
+                    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
+                                                                  messageAsDictionary:[self loginResponseObject]];
+                    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }];
     } else {
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
@@ -172,38 +172,40 @@
 
 - (void)setAutoLogAppEventsEnabled:(CDVInvokedUrlCommand *)command {
     BOOL enabled = [[command argumentAtIndex:0] boolValue];
-    [FBSDKSettings setAutoLogAppEventsEnabled:enabled];
+    [FBSDKSettings.sharedSettings setAutoLogAppEventsEnabled:enabled];
     [self returnGenericSuccess:command.callbackId];
 }
 
 - (void)setAdvertiserIDCollectionEnabled:(CDVInvokedUrlCommand *)command {
     BOOL enabled = [[command argumentAtIndex:0] boolValue];
-    [FBSDKSettings setAdvertiserIDCollectionEnabled:enabled];
+    [FBSDKSettings.sharedSettings setAdvertiserIDCollectionEnabled:enabled];
     [self returnGenericSuccess:command.callbackId];
 }
 
 - (void)setAdvertiserTrackingEnabled:(CDVInvokedUrlCommand *)command {
     BOOL enabled = [[command argumentAtIndex:0] boolValue];
-    [FBSDKSettings setAdvertiserTrackingEnabled:enabled];
+    [FBSDKSettings.sharedSettings setAdvertiserTrackingEnabled:enabled];
     [self returnGenericSuccess:command.callbackId];
 }
 
 - (void)setDataProcessingOptions:(CDVInvokedUrlCommand *)command {
-    if ([command.arguments count] == 0) {
-        // Not enough arguments
-        [self returnInvalidArgsError:command.callbackId];
-        return;
-    }
-
-    NSArray *options = [command argumentAtIndex:0];
-    if ([command.arguments count] == 1) {
-        [FBSDKSettings setDataProcessingOptions:options];
-    } else {
-        NSString *country = [command.arguments objectAtIndex:1];
-        NSString *state = [command.arguments objectAtIndex:2];
-        [FBSDKSettings setDataProcessingOptions:options country:country state:state];  
-    }
-    [self returnGenericSuccess:command.callbackId];
+    NSAssert(NO, @"Ivan: Not implemented");
+    //Ivan: skipped options, country is an int now
+//    if ([command.arguments count] == 0) {
+//        // Not enough arguments
+//        [self returnInvalidArgsError:command.callbackId];
+//        return;
+//    }
+//
+//    NSArray *options = [command argumentAtIndex:0];
+//    if ([command.arguments count] == 1) {
+//        [FBSDKSettings.sharedSettings setDataProcessingOptions:options];
+//    } else {
+//        NSString *country = [command.arguments objectAtIndex:1];
+//        NSString *state = [command.arguments objectAtIndex:2];
+//        [FBSDKSettings.sharedSettings setDataProcessingOptions:options country:country state:state];
+//    }
+//    [self returnGenericSuccess:command.callbackId];
 }
 
 - (void)setUserData:(CDVInvokedUrlCommand *)command {
@@ -221,7 +223,7 @@
             [self.commandDelegate sendPluginResult:res callbackId:command.callbackId];
             return;
         } else {
-            [FBSDKAppEvents setUserEmail:(NSString *)params[@"em"] 
+            [FBSDKAppEvents.shared setUserEmail:(NSString *)params[@"em"]
                             firstName:(NSString*)params[@"fn"] 
                             lastName:(NSString *)params[@"ln"] 
                             phone:(NSString *)params[@"ph"] 
@@ -238,7 +240,7 @@
 }
 
 - (void)clearUserData:(CDVInvokedUrlCommand *)command {
-    [FBSDKAppEvents clearUserData];
+    [FBSDKAppEvents.shared clearUserData];
     [self returnGenericSuccess:command.callbackId];
 }
 
@@ -257,20 +259,20 @@
         double value;
 
         if ([command.arguments count] == 1) {
-            [FBSDKAppEvents logEvent:eventName];
+            [FBSDKAppEvents.shared logEvent:eventName];
 
         } else {
             // argument count is not 0 or 1, must be 2 or more
             params = [command.arguments objectAtIndex:1];
             if ([command.arguments count] == 2) {
                 // If count is 2 we will just send params
-                [FBSDKAppEvents logEvent:eventName parameters:params];
+                [FBSDKAppEvents.shared logEvent:eventName parameters:params];
             }
 
             if ([command.arguments count] >= 3) {
                 // If count is 3 we will send params and a value to sum
                 value = [[command.arguments objectAtIndex:2] doubleValue];
-                [FBSDKAppEvents logEvent:eventName valueToSum:value parameters:params];
+                [FBSDKAppEvents.shared logEvent:eventName valueToSum:value parameters:params];
             }
         }
         [self returnGenericSuccess:command.callbackId];
@@ -288,10 +290,10 @@
         NSString *currency = [command.arguments objectAtIndex:1];
         
         if ([command.arguments count] == 2 ) {
-            [FBSDKAppEvents logPurchase:value currency:currency];
+            [FBSDKAppEvents.shared logPurchase:value currency:currency];
         } else if ([command.arguments count] >= 3) {
             NSDictionary *params = [command.arguments objectAtIndex:2];
-            [FBSDKAppEvents logPurchase:value currency:currency parameters:params];
+            [FBSDKAppEvents.shared logPurchase:value currency:currency parameters:params];
         }
 
         [self returnGenericSuccess:command.callbackId];
@@ -309,19 +311,21 @@
 
     // this will prevent from being unable to login after updating plugin or changing permissions
     // without refreshing there will be a cache problem. This simple call should fix the problems
-    [FBSDKAccessToken refreshCurrentAccessToken:nil];
+    [FBSDKAccessToken refreshCurrentAccessTokenWithCompletion:nil];
+    // Ivan: behaviour might change
+//    [FBSDKAccessToken refreshCurrentAccessToken:nil];
 
     FBSDKLoginManagerLoginResultBlock loginHandler = ^void(FBSDKLoginManagerLoginResult *result, NSError *error) {
         if (error) {
             // If the SDK has a message for the user, surface it.
             NSString *errorCode = @"-2";
             NSString *errorMessage = error.userInfo[FBSDKErrorLocalizedDescriptionKey];
-            [self returnLoginError:command.callbackId:errorCode:errorMessage];
+            [self returnLoginError:command.callbackId errorCode:errorCode errorMessage:errorMessage];
             return;
         } else if (result.isCancelled) {
             NSString *errorCode = @"4201";
             NSString *errorMessage = @"User cancelled.";
-            [self returnLoginError:command.callbackId:errorCode:errorMessage];
+            [self returnLoginError:command.callbackId errorCode:errorCode errorMessage:errorMessage];
         } else {
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
                                                           messageAsDictionary:[self loginResponseObject]];
@@ -379,12 +383,12 @@
             // If the SDK has a message for the user, surface it.
             NSString *errorCode = @"-2";
             NSString *errorMessage = error.userInfo[FBSDKErrorLocalizedDescriptionKey];
-            [self returnLoginError:command.callbackId:errorCode:errorMessage];
+            [self returnLoginError:command.callbackId errorCode:errorCode errorMessage:errorMessage];
             return;
         } else if (result.isCancelled) {
             NSString *errorCode = @"4201";
             NSString *errorMessage = @"User cancelled.";
-            [self returnLoginError:command.callbackId:errorCode:errorMessage];
+            [self returnLoginError:command.callbackId errorCode:errorCode errorMessage:errorMessage];
         } else {
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
                                                           messageAsDictionary:[self limitedLoginResponseObject]];
@@ -458,12 +462,12 @@
         if (error) {
             NSString *errorCode = @"-2";
             NSString *errorMessage = error.userInfo[FBSDKErrorLocalizedDescriptionKey];
-            [self returnLoginError:command.callbackId:errorCode:errorMessage];
+            [self returnLoginError:command.callbackId errorCode:errorCode errorMessage:errorMessage];
             return;
         } else if (result.isCancelled) {
             NSString *errorCode = @"4201";
             NSString *errorMessage = @"User cancelled.";
-            [self returnLoginError:command.callbackId:errorCode:errorMessage];
+            [self returnLoginError:command.callbackId errorCode:errorCode errorMessage:errorMessage];
         } else {
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
                                                           messageAsDictionary:[self loginResponseObject]];
@@ -481,7 +485,8 @@
         if (self.loginManager == nil) {
             self.loginManager = [[FBSDKLoginManager alloc] init];
         }
-        if (self.loginTracking == nil) {
+        //Ivan: if (self.loginTracking != nil) {
+        if (self.loginTracking != FBSDKLoginTrackingLimited) {
             self.loginTracking = FBSDKLoginTrackingEnabled;
         }
 
@@ -527,91 +532,94 @@
         return;
 
     } else if ([method isEqualToString:@"share"] || [method isEqualToString:@"feed"]) {
-        // Create native params
-        self.dialogCallbackId = command.callbackId;
-        FBSDKShareDialog *dialog = [[FBSDKShareDialog alloc] init];
-        dialog.fromViewController = [self topMostController];
-        if (params[@"photo_image"]) {
-        	FBSDKSharePhoto *photo = [[FBSDKSharePhoto alloc] init];
-        	NSString *photoImage = params[@"photo_image"];
-        	if (![photoImage isKindOfClass:[NSString class]]) {
-        		NSLog(@"photo_image must be a string");
-        	} else {
-        		NSData *photoImageData = [[NSData alloc]initWithBase64EncodedString:photoImage options:NSDataBase64DecodingIgnoreUnknownCharacters];
-        		if (!photoImageData) {
-        			NSLog(@"photo_image cannot be decoded");
-        		} else {
-        			photo.image = [UIImage imageWithData:photoImageData];
-        			photo.userGenerated = YES;
-        		}
-        	}
-        	FBSDKSharePhotoContent *content = [[FBSDKSharePhotoContent alloc] init];
-        	content.photos = @[photo];
-        	dialog.shareContent = content;
-        } else {
-        	FBSDKShareLinkContent *content = [[FBSDKShareLinkContent alloc] init];
-        	content.contentURL = [NSURL URLWithString:params[@"href"]];
-        	content.hashtag = [FBSDKHashtag hashtagWithString:[params objectForKey:@"hashtag"]];
-        	content.quote = params[@"quote"];
-        	dialog.shareContent = content;
-        }
-        dialog.delegate = self;
-        // Adopt native share sheets with the following line
-        if (params[@"share_sheet"]) {
-        	dialog.mode = FBSDKShareDialogModeShareSheet;
-        } else if (params[@"share_feedBrowser"]) {
-        	dialog.mode = FBSDKShareDialogModeFeedBrowser;
-        } else if (params[@"share_native"]) {
-        	dialog.mode = FBSDKShareDialogModeNative;
-        } else if (params[@"share_feedWeb"]) {
-        	dialog.mode = FBSDKShareDialogModeFeedWeb;
-        }
-
-        [dialog show];
+        NSAssert(NO, @"Ivan: Not implemented");
+//        // Create native params
+//        self.dialogCallbackId = command.callbackId;
+//        FBSDKShareDialog *dialog = [[FBSDKShareDialog alloc] init];
+//        dialog.fromViewController = [self topMostController];
+//        if (params[@"photo_image"]) {
+//        	FBSDKSharePhoto *photo = [[FBSDKSharePhoto alloc] init];
+//        	NSString *photoImage = params[@"photo_image"];
+//        	if (![photoImage isKindOfClass:[NSString class]]) {
+//        		NSLog(@"photo_image must be a string");
+//        	} else {
+//        		NSData *photoImageData = [[NSData alloc]initWithBase64EncodedString:photoImage options:NSDataBase64DecodingIgnoreUnknownCharacters];
+//        		if (!photoImageData) {
+//        			NSLog(@"photo_image cannot be decoded");
+//        		} else {
+//        			photo.image = [UIImage imageWithData:photoImageData];
+//        			photo.userGenerated = YES;
+//        		}
+//        	}
+//        	FBSDKSharePhotoContent *content = [[FBSDKSharePhotoContent alloc] init];
+//        	content.photos = @[photo];
+//        	dialog.shareContent = content;
+//        } else {
+//        	FBSDKShareLinkContent *content = [[FBSDKShareLinkContent alloc] init];
+//        	content.contentURL = [NSURL URLWithString:params[@"href"]];
+//        	content.hashtag = [FBSDKHashtag hashtagWithString:[params objectForKey:@"hashtag"]];
+//        	content.quote = params[@"quote"];
+//        	dialog.shareContent = content;
+//        }
+//        dialog.delegate = self;
+//        // Adopt native share sheets with the following line
+//        if (params[@"share_sheet"]) {
+//        	dialog.mode = FBSDKShareDialogModeShareSheet;
+//        } else if (params[@"share_feedBrowser"]) {
+//        	dialog.mode = FBSDKShareDialogModeFeedBrowser;
+//        } else if (params[@"share_native"]) {
+//        	dialog.mode = FBSDKShareDialogModeNative;
+//        } else if (params[@"share_feedWeb"]) {
+//        	dialog.mode = FBSDKShareDialogModeFeedWeb;
+//        }
+//
+//        [dialog show];
         return;
     }
     else if ([method isEqualToString:@"apprequests"]) {
-        FBSDKGameRequestDialog *dialog = [[FBSDKGameRequestDialog alloc] init];
-        dialog.delegate = self;
-        if (![dialog canShow]) {
-            CDVPluginResult *pluginResult;
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-                            messageAsString:@"Cannot show dialog"];
-            return;
-        }
+        NSAssert(NO, @"Ivan: Not implemented");
 
-        FBSDKGameRequestContent *content = [[FBSDKGameRequestContent alloc] init];
-        NSString *actionType = params[@"actionType"];
-        if (!actionType) {
-            NSLog(@"Discarding invalid argument actionType");
-        } else if ([[actionType lowercaseString] isEqualToString:@"askfor"]) {
-            content.actionType = FBSDKGameRequestActionTypeAskFor;
-        } else if ([[actionType lowercaseString] isEqualToString:@"send"]) {
-            content.actionType = FBSDKGameRequestActionTypeSend;
-        } else if ([[actionType lowercaseString] isEqualToString:@"turn"]) {
-            content.actionType = FBSDKGameRequestActionTypeTurn;
-        } else {
-            NSLog(@"Discarding invalid argument actionType");
-        }
-
-        NSString *filters = params[@"filters"];
-        if (!filters) {
-            content.filters = FBSDKGameRequestFilterNone;
-        } else if ([filters isEqualToString:@"app_users"]) {
-            content.filters = FBSDKGameRequestFilterAppUsers;
-        } else if ([filters isEqualToString:@"app_non_users"]) {
-            content.filters = FBSDKGameRequestFilterAppNonUsers;
-        }
-
-        content.data = params[@"data"];
-        content.message = params[@"message"];
-        content.objectID = params[@"objectID"];
-        content.recipients = params[@"to"];
-        content.title = params[@"title"];
-
-        self.gameRequestDialogCallbackId = command.callbackId;
-        dialog.content = content;
-        [dialog show];
+//        FBSDKGameRequestDialog *dialog = [[FBSDKGameRequestDialog alloc] init];
+//        dialog.delegate = self;
+//        if (![dialog canShow]) {
+//            CDVPluginResult *pluginResult;
+//            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+//                            messageAsString:@"Cannot show dialog"];
+//            return;
+//        }
+//
+//        FBSDKGameRequestContent *content = [[FBSDKGameRequestContent alloc] init];
+//        NSString *actionType = params[@"actionType"];
+//        if (!actionType) {
+//            NSLog(@"Discarding invalid argument actionType");
+//        } else if ([[actionType lowercaseString] isEqualToString:@"askfor"]) {
+//            content.actionType = FBSDKGameRequestActionTypeAskFor;
+//        } else if ([[actionType lowercaseString] isEqualToString:@"send"]) {
+//            content.actionType = FBSDKGameRequestActionTypeSend;
+//        } else if ([[actionType lowercaseString] isEqualToString:@"turn"]) {
+//            content.actionType = FBSDKGameRequestActionTypeTurn;
+//        } else {
+//            NSLog(@"Discarding invalid argument actionType");
+//        }
+//
+//        NSString *filters = params[@"filters"];
+//        if (!filters) {
+//            content.filters = FBSDKGameRequestFilterNone;
+//        } else if ([filters isEqualToString:@"app_users"]) {
+//            content.filters = FBSDKGameRequestFilterAppUsers;
+//        } else if ([filters isEqualToString:@"app_non_users"]) {
+//            content.filters = FBSDKGameRequestFilterAppNonUsers;
+//        }
+//
+//        content.data = params[@"data"];
+//        content.message = params[@"message"];
+//        content.objectID = params[@"objectID"];
+//        content.recipients = params[@"to"];
+//        content.title = params[@"title"];
+//
+//        self.gameRequestDialogCallbackId = command.callbackId;
+//        dialog.content = content;
+//        [dialog show];
         return;
     }
     CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"method not supported"];
@@ -670,7 +678,9 @@
     permissions = [requestPermissions copy];
 
     // Defines block that handles the Graph API response
-    FBSDKGraphRequestBlock graphHandler = ^(FBSDKGraphRequestConnection *connection, id result, NSError *error) {
+    FBSDKGraphRequestCompletion graphHandler = ^(id<FBSDKGraphRequestConnecting> _Nullable connection,
+                                                 id _Nullable result,
+                                                 NSError *_Nullable error) {
         CDVPluginResult* pluginResult;
         if (error) {
             NSString *message = error.userInfo[FBSDKErrorLocalizedDescriptionKey] ?: @"There was an error making the graph call.";
@@ -686,11 +696,12 @@
     };
 
     NSLog(@"Graph Path = %@", graphPath);
-    FBSDKGraphRequest *request = [[FBSDKGraphRequest alloc] initWithGraphPath:graphPath parameters:nil HTTPMethod:requestMethod];
+    FBSDKGraphRequest *request = [[FBSDKGraphRequest alloc] initWithGraphPath:graphPath parameters:@{} HTTPMethod:requestMethod];
 
     // If we have permissions to request
     if ([permissions count] == 0){
-        [request startWithCompletionHandler:graphHandler];
+        [request startWithCompletion:graphHandler];
+//        [request startWithCompletionHandler:graphHandler];
         return;
     }
 
@@ -699,12 +710,12 @@
             // If the SDK has a message for the user, surface it.
             NSString *errorCode = @"-2";
             NSString *errorMessage = error.userInfo[FBSDKErrorLocalizedDescriptionKey];
-            [self returnLoginError:command.callbackId:errorCode:errorMessage];
+            [self returnLoginError:command.callbackId errorCode:errorCode errorMessage:errorMessage];
             return;
         } else if (result.isCancelled) {
             NSString *errorCode = @"4201";
             NSString *errorMessage = @"User cancelled.";
-            [self returnLoginError:command.callbackId:errorCode:errorMessage];
+            [self returnLoginError:command.callbackId errorCode:errorCode errorMessage:errorMessage];
             return;
         }
 
@@ -724,7 +735,7 @@
             return;
         }
 
-        [request startWithCompletionHandler:graphHandler];
+        [request startWithCompletion: graphHandler];
     }];
 }
 
@@ -750,7 +761,7 @@
 
 - (void) activateApp:(CDVInvokedUrlCommand *)command
 {
-    [FBSDKAppEvents activateApp];
+    [FBSDKAppEvents.shared activateApp];
     [self returnGenericSuccess:command.callbackId];
 }
 
@@ -766,12 +777,22 @@
     [self.commandDelegate sendPluginResult:res callbackId:callbackId];
 }
 
-- (void) returnLoginError:(NSString *)callbackId:(NSString *)errorCode:(NSString *)errorMessage {
+- (void) returnLoginError:(NSString *) callbackId errorCode:(NSString *)errorCode errorMessage:(NSString *)errorMessage {
     NSMutableDictionary *response = [[NSMutableDictionary alloc] init];
     response[@"errorCode"] = errorCode ?: @"-2";
     response[@"errorMessage"] = errorMessage ?: @"There was a problem logging you in.";
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-                                     messageAsString:response];
+    
+    NSString *responseString = nil;
+    NSError *error;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:response
+                                                       options:0
+                                                         error:&error];
+    if (jsonData) {
+        responseString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    }
+    responseString = responseString ? responseString : response[@"errorMessage"];
+    
+    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:responseString];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:callbackId];
 }
 
@@ -896,7 +917,7 @@
     if ([self.webView isMemberOfClass:[WKWebView class]]){
         NSString *is_enabled = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FacebookHybridAppEvents"];
         if([is_enabled isEqualToString:@"true"]){
-            [FBSDKAppEvents augmentHybridWKWebView:(WKWebView*)self.webView];
+            [FBSDKAppEvents.shared augmentHybridWebView:(WKWebView*)self.webView];
             NSLog(@"FB Hybrid app events are enabled");
         } else {
             NSLog(@"FB Hybrid app events are not enabled");
@@ -943,57 +964,7 @@
     self.dialogCallbackId = nil;
 }
 
-
-#pragma mark - FBSDKGameRequestDialogDelegate
-
-- (void)gameRequestDialog:(FBSDKGameRequestDialog *)gameRequestDialog
-   didCompleteWithResults:(NSDictionary *)results
-{
-    if (!self.gameRequestDialogCallbackId) {
-        return;
-    }
-
-    NSLog(@"game request dialog did complete");
-    NSLog(@"result::%@", results);
-
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:results];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.gameRequestDialogCallbackId];
-    self.gameRequestDialogCallbackId = nil;
-}
-
-- (void)gameRequestDialogDidCancel:(FBSDKGameRequestDialog *)gameRequestDialog
-{
-    if (!self.gameRequestDialogCallbackId) {
-        return;
-    }
-
-    NSLog(@"game request dialog did cancel");
-
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"User cancelled dialog"];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.gameRequestDialogCallbackId];
-    self.gameRequestDialogCallbackId = nil;
-}
-
-- (void)gameRequestDialog:(FBSDKGameRequestDialog *)gameRequestDialog
-         didFailWithError:(NSError *)error
-{
-    if (!self.gameRequestDialogCallbackId) {
-        return;
-    }
-
-    NSLog(@"game request dialog did fail");
-    NSLog(@"error::%@", error);
-
-    CDVPluginResult* pluginResult;
-    NSString *message = error.userInfo[FBSDKErrorLocalizedDescriptionKey] ?: @"There was an error making the graph call.";
-    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
-                                     messageAsString:message];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:self.gameRequestDialogCallbackId];
-    self.gameRequestDialogCallbackId = nil;
-}
-
 @end
-
 
 #pragma mark - AppDelegate Overrides
 
